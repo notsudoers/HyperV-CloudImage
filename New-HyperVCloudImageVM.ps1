@@ -29,13 +29,13 @@
 [CmdletBinding()]
 param(
   [string] $VMName = "CloudVm",
-  [int] $VMGeneration = 1, # create gen1 hyper-v machine because of portability to Azure (https://docs.microsoft.com/en-us/azure/virtual-machines/windows/prepare-for-upload-vhd-image)
-  [int] $VMProcessorCount = 1,
-  [bool] $VMDynamicMemoryEnabled = $false,
+  [int] $VMGeneration = 2, # create gen1 hyper-v machine because of portability to Azure (https://docs.microsoft.com/en-us/azure/virtual-machines/windows/prepare-for-upload-vhd-image)
+  [int] $VMProcessorCount = 2,
+  [bool] $VMDynamicMemoryEnabled = $true,
   [uint64] $VMMemoryStartupBytes = 1024MB,
-  [uint64] $VMMinimumBytes = $VMMemoryStartupBytes,
-  [uint64] $VMMaximumBytes = $VMMemoryStartupBytes,
-  [uint64] $VHDSizeBytes = 16GB,
+  [uint64] $VMMinimumBytes = 512MB,
+  [uint64] $VMMaximumBytes = 4GB,
+  [uint64] $VHDSizeBytes = 10GB,
   [string] $VirtualSwitchName = $null,
   [string] $VMVlanID = $null,
   [string] $VMNativeVlanID = $null,
