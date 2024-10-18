@@ -83,7 +83,8 @@ param(
   [bool] $BaseImageCleanup = $true, # delete old vhd image. Set to false if using (TODO) differencing VHD
   [switch] $ShowSerialConsoleWindow = $false,
   [switch] $ShowVmConnectWindow = $false,
-  [switch] $Force = $false
+  [switch] $Force = $false,
+  [string] $BaseImagePath = "E:\Hyper-V\Images"
 )
 
 [System.Threading.Thread]::CurrentThread.CurrentUICulture = "en-US"
@@ -854,7 +855,7 @@ Write-Verbose "Metadata iso written"
 Write-Host -ForegroundColor Green " Done."
 
 # storage location for base images
-$ImageCachePath = Join-Path $PSScriptRoot $("cache\CloudImage-$ImageOS-$ImageVersion")
+$ImageCachePath = Join-Path $BaseImagePath $("CloudImage-$ImageOS-$ImageVersion")
 if (!(test-path $ImageCachePath)) {mkdir -Path $ImageCachePath | out-null}
 
 # Get the timestamp of the target build on the cloud-images site
@@ -1026,9 +1027,9 @@ if (!(test-path "$($ImageCachePath)\$($ImageOS)-$($stamp).vhd")) {
 }
 
 # File path for to-be provisioned VHD
-$VMDiskPath = "$($VMStoragePath)\$($VMName).vhd"
+$VMDiskPath = "$($VMStoragePath)\$($VMName)_sda.vhd"
 if ($VMGeneration -eq 2) {
-  $VMDiskPath = "$($VMStoragePath)\$($VMName).vhdx"
+  $VMDiskPath = "$($VMStoragePath)\$($VMName)_sda.vhdx"
 }
 cleanupFile $VMDiskPath
 
@@ -1065,6 +1066,8 @@ if ($null -eq (Get-VMDvdDrive -VMName $VMName)) {
   Add-VMDvdDrive -VMName $VMName
 }
 Set-VMDvdDrive -VMName $VMName -Path "$metaDataIso"
+
+Rename-VMNetworkAdapter -VMName $VMName -Name "Network Adapter" -NewName "Network Adapter eth0"
 
 If (($null -ne $virtualSwitchName) -and ($virtualSwitchName -ne "")) {
   Write-Verbose "Connecting VMnet adapter to virtual switch '$virtualSwitchName'..."
