@@ -49,11 +49,11 @@ param(
   #[switch] $VMMaximumBandwidth = $null,
   [switch] $VMMacAddressSpoofing = $false,
   [switch] $VMExposeVirtualizationExtensions = $false,
-  [string] $VMVersion = "8.0", # version 8.0 for hyper-v 2016 compatibility , check all possible values with Get-VMHostSupportedVersion
+  [string] $VMVersion = "12.0", # version 8.0 for hyper-v 2016 compatibility , check all possible values with Get-VMHostSupportedVersion
   [string] $VMHostname = $VMName,
   [string] $VMMachine_StoragePath = $null, # if defined setup machine path with storage path as subfolder
-  [string] $VMMachinePath = $null, # if not defined here default Virtal Machine path is used
-  [string] $VMStoragePath = $null, # if not defined here Hyper-V settings path / fallback path is set below
+  [string] $VMMachinePath = "E:\Hyper-V\Instances\Configurations", # if not defined here default Virtual Machine path is used
+  [string] $VMStoragePath = "E:\Hyper-V\Instances\Disks", # if not defined here Hyper-V settings path / fallback path is set below
   [bool] $ConvertImageToNoCloud = $false, # could be used for other image types that do not support NoCloud, not just Azure
   [bool] $ImageTypeAzure = $false,
   [string] $DomainName = "domain.local",
