@@ -268,6 +268,8 @@ switch ($ImageOS) {
     $ImageManifestUrl = "$($ImageUrlRoot)$($ImageFileName).manifest"
   }
   "debian" {
+    $ImageRelease = "latest" # default option is get latest but could be fixed to some specific version for example "release-20210413"
+    $ImageFileName = "$ImageOS-$ImageVersion-genericcloud-amd64" # should contain "vhd.*" version
     switch ($ImageVersion) {
       { "10", "buster" -eq $_ } {
         $ImageVersionName = "buster"
@@ -285,13 +287,19 @@ switch ($ImageOS) {
         $ImageVersion = "12"
         break
       }
+      { "13", "trixie" -eq $_ } {
+        $ImageVersionName = "trixie"
+        $ImageVersion = "13"
+        # $ConvertImageToNoCloud = $true
+        $ImageRelease = "daily/latest" # default option is get latest but could be fixed to some specific version for example "release-20210413"
+        $ImageFileName = "$ImageOS-$ImageVersion-genericcloud-amd64-daily"
+        break
+      }
       default {throw "Image version $_ is not supported."}
     }
-    $ImageRelease = "latest" # default option is get latest but could be fixed to some specific version for example "release-20210413"
     # http://cloud.debian.org/images/cloud/buster/latest/debian-10-azure-amd64.tar.xz
     $ImageBaseUrl = "http://cloud.debian.org/images/cloud"
     $ImageUrlRoot = "$ImageBaseUrl/$ImageVersionName/$ImageRelease/"
-    $ImageFileName = "$ImageOS-$ImageVersion-genericcloud-amd64" # should contain "vhd.*" version
     $ImageFileExtension = "tar.xz" # or "vhd.tar.gz" on older releases
     # Manifest file is used for version check based on last modified HTTP header
     $ImageHashFileName = "SHA512SUMS"
@@ -487,20 +495,6 @@ $(if (($null -ne $NetAddress) -and ($NetAddress -ne "")) { "          address $N
       slaac private
 
     path: /etc/dhcp/dhclient.conf
-"@
-  } elseif ($NetConfigType -ieq "sysconfig") {
-    Write-Verbose "sysconfig requested ..."
-    $networkconfig = @"
-ONBOOT=yes
-BOOTPROTO=static
-DEVICE=$($NetInterface)
-#$(if (($null -eq $VMStaticMacAddress) -or ($VMStaticMacAddress -eq "")) { "#" })HWADDR=$VMStaticMacAddress
-$(if (($null -eq $NetAddress) -or ($NetAddress -eq "")) { "#" })IPADDR=$NetAddress
-$(if (($null -eq $NetGateway) -or ($NetGateway -eq "")) { "#" })GATEWAY=$NetGateway
-DNS1=$($NameServers.Split(",") -join "', '" )
-SEARCH="$($DomainName)"
-TYPE=Ethernet
-USERCTL=no
 "@
   } else {
     Write-Warning "No network configuration version type defined for static IP address setup."
@@ -760,7 +754,7 @@ mkdir -Path "$($tempPath)\Bits"  | out-null
 # Output metadata, networkconfig and userdata to file on disk
 Set-ContentAsByteStream "$($tempPath)\Bits\meta-data" ([byte[]][char[]] "$metadata")
 if (($NetAutoconfig -eq $false) -and
-   (($NetConfigType -ieq "v1") -or ($NetConfigType -ieq "v2")) -or ($NetConfigType -ieq "sysconfig")) {
+   (($NetConfigType -ieq "v1") -or ($NetConfigType -ieq "v2"))) {
   Set-ContentAsByteStream "$($tempPath)\Bits\network-config" ([byte[]][char[]] "$networkconfig")
 }
 Set-ContentAsByteStream "$($tempPath)\Bits\user-data" ([byte[]][char[]] "$userdata")
@@ -1216,30 +1210,30 @@ if ($PSBoundParameters.Debug -eq $true) {
   Write-Host -ForegroundColor Green " Done."
 }
 
-# Write-Host "Starting VM..." -NoNewline
-# Start-VM $VMName
-# Write-Host -ForegroundColor Green " Done."
+Write-Host "Starting VM..." -NoNewline
+Start-VM $VMName
+Write-Host -ForegroundColor Green " Done."
 
 # TODO check if VM has got an IP ADDR, if address is missing then write error because provisioning won't work without IP, src: https://stackoverflow.com/a/27999072/1155121
 
 
-# if ($ShowSerialConsoleWindow) {
-#   # start putty or hvc.exe with serial connection to newly created VM
-#   try {
-#     Get-Command "putty" | out-null
-#     start-sleep -seconds 2
-#     & "PuTTY" -serial "\\.\pipe\$VMName-com1" -sercfg "115200,8,n,1,N"
-#   }
-#   catch {
-#     Write-Verbose "putty not available, will try Windows Terminal + hvc.exe"
-#     Start-Process "wt.exe" "new-tab cmd /k hvc.exe serial $VMName" -WindowStyle Normal
-#   }
+if ($ShowSerialConsoleWindow) {
+  # start putty or hvc.exe with serial connection to newly created VM
+  try {
+    Get-Command "putty" | out-null
+    start-sleep -seconds 2
+    & "PuTTY" -serial "\\.\pipe\$VMName-com1" -sercfg "115200,8,n,1,N"
+  }
+  catch {
+    Write-Verbose "putty not available, will try Windows Terminal + hvc.exe"
+    Start-Process "wt.exe" "new-tab cmd /k hvc.exe serial $VMName" -WindowStyle Normal
+  }
 
-# }
+}
 
-# if ($ShowVmConnectWindow) {
-#   # Open up VMConnect
-#   Start-Process "vmconnect" "localhost","$VMName" -WindowStyle Normal
-# }
+if ($ShowVmConnectWindow) {
+  # Open up VMConnect
+  Start-Process "vmconnect" "localhost","$VMName" -WindowStyle Normal
+}
 
 Write-Host "Done"
